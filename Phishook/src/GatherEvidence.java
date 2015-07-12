@@ -7,6 +7,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.IOException;
+import java.net.SocketException;
+
+import org.apache.commons.net.whois.WhoisClient;
 
 public class GatherEvidence extends Frame implements ActionListener, WindowListener {
 	// This is where I will put the beginner gui...when I get some free time
@@ -25,7 +29,7 @@ public class GatherEvidence extends Frame implements ActionListener, WindowListe
 		lblCount = new Label("URL:"); // construct Label
 		add(lblCount); // "super" Frame adds Label
 
-		tfCount = new TextField("paste or type url here"); // construct TextField
+		tfCount = new TextField("Put url here!"); // construct TextField
 		tfCount.setEditable(true); // set to read-only
 		add(tfCount); // "super" Frame adds tfCount
 
@@ -52,8 +56,8 @@ public class GatherEvidence extends Frame implements ActionListener, WindowListe
 		// System.out.println(lblCount);
 		// System.out.println(tfCount);
 		// System.out.println(btnCount);
-	}
-
+	}	
+	
 	/** The entry main() method */
 	public static void main(String[] args) {
 		// Invoke the constructor to setup the GUI, by allocating an instance
@@ -61,15 +65,29 @@ public class GatherEvidence extends Frame implements ActionListener, WindowListe
 	}
 
 	/** ActionEvent handler - Called back upon button-click. */
-	@Override
 	public void actionPerformed(ActionEvent evt) {
-		//++count; // increase the counter value
-		// Display the counter value on the TextField tfCount
-		GatherEvidence obj = new GatherEvidence();
-		System.out.println(obj.getWhois("mkyong.com"));
-		//tfCount.setText(count + ""); // convert int to String
+		// retrieve the whois information of the URL entered
+		System.out.println(this.getWhois(this.tfCount.getText()));
+		//tfCount.setText(count + ""); // convert int to String 
 	}
 	
+	public String getWhois(String domainName) {
+		StringBuilder result = new StringBuilder("");
+		WhoisClient whois = new WhoisClient();
+		try {
+			 
+			//default is internic.net
+			whois.connect(WhoisClient.DEFAULT_HOST);
+			String whoisData1 = whois.query("=" + domainName);
+			result.append(whoisData1);
+			whois.disconnect();
+		} catch (SocketException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return result.toString();
+	}
 	
 	/* This method is for closing the gui */
 	public void windowClosing(WindowEvent e) {
