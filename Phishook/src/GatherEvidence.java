@@ -9,6 +9,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.net.whois.WhoisClient;
 
@@ -18,6 +20,14 @@ public class GatherEvidence extends Frame implements ActionListener, WindowListe
 	private TextField tfCount; // Declare component TextField
 	private Button btnCount; // Declare component Button
 	private int count = 0; // Counter's value
+	private static Pattern pattern;
+	private Matcher matcher;
+	
+	// regex whois parser
+	private static final String WHOIS_SERVER_PATTERN= "Whois Server:\\s(.*)";
+	static {
+		pattern = Pattern.compile(WHOIS_SERVER_PATTERN);
+	}
 
 	/** Constructor to setup GUI components and event handling */
 	public GatherEvidence() {
@@ -45,17 +55,8 @@ public class GatherEvidence extends Frame implements ActionListener, WindowListe
 		
 		addWindowListener(this);
 
-		// System.out.println(this);
-		// System.out.println(lblCount);
-		// System.out.println(tfCount);
-		// System.out.println(btnCount);
-
 		setVisible(true); // "super" Frame shows
 
-		// System.out.println(this);
-		// System.out.println(lblCount);
-		// System.out.println(tfCount);
-		// System.out.println(btnCount);
 	}	
 	
 	/** The entry main() method */
@@ -76,17 +77,58 @@ public class GatherEvidence extends Frame implements ActionListener, WindowListe
 		WhoisClient whois = new WhoisClient();
 		try {
 			 
-			//default is internic.net
+			// default is internic.net
 			whois.connect(WhoisClient.DEFAULT_HOST);
+			
+			// whois =domainName
 			String whoisData1 = whois.query("=" + domainName);
+			
+			// append first result
 			result.append(whoisData1);
 			whois.disconnect();
+			
+			//get the domain whois server
+			String whoisServerURL = getWhoisServer(whoisData1);
+			if (!whoisServerURL.equals("")) {
+				// whois -h whois.server.com domain
+				String whoisData2 = queryWithWhoisServer(domainName, whoisServerURL);
+				
+				// append 2nd result
+				result.append(whoisData2);
+			}
 		} catch (SocketException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		return result.toString();
+	}
+	
+	/* This will query with the whois server*/
+	private String queryWithWhoisServer(String domainName, String whoisServer) {
+		String result = "";
+		WhoisClient whois = new WhoisClient();
+		try {
+			whois.connect(whoisServer);
+			result = whois.query(domainName);
+			whois.disconnect();
+		} catch (SocketException e){
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	/* This method will retrieve the whois server */
+	private String getWhoisServer(String whois) {
+		String result = "";
+		matcher = pattern.matcher(whois);
+		//get last whois server
+		while (matcher.find()) {
+			result = matcher.group(1);
+		}
+		return result;
 	}
 	
 	/* This method is for closing the gui */
